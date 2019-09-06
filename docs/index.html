@@ -28,19 +28,28 @@
 
 <body>
 
-<p>
+	<p>
 	<input type="button" id="addType" value="Add a new type" />
+	<p>
 
-<p>
-
-<h1>Neuron-Fac bricks demo</h1>
-<div class="drag" style="left:20px;"></div>
-<div class="drag" style="left:100px;"></div>
-<div class="drag" style="left:180px;"></div>
-<div class="drag" style="left:260px;"></div>
+	<h1>Neuron-Fac bricks demo</h1>
+	<center>
+		<h2>Workspace</h2>
+		<div id="workspace"></div>
+	</center>
+	<div class="drag" style="left:20px;"></div>
+	<div class="drag" style="left:100px;"></div>
+	<div class="drag" style="left:180px;"></div>
+	<div class="drag" style="left:260px;"></div>
 
 
 <style type="text/css">
+#workspace {
+	height:600px;
+	width:600px;
+	border: 1px dashed #888;
+	margin-top:30px;
+}
 .drag {
 	position: absolute;
 	border: 1px solid #89B;
