@@ -2,10 +2,12 @@
   "name": "toronto-bricks",
   "version": "1.0.0",
   "description": "Provides information with regards to building permits in Greater Toronto Area",
-  "main": "torontoBricks.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Franck Binard",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@shopify/draggable": "^1.0.0-beta.8"
+  }
 }
