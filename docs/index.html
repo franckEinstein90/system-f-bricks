@@ -5,52 +5,96 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=8" />
 <link href="base.css" rel="stylesheet" />
-<script src="jquery-1.7.2.js"></script>
-<script src="jquery.event.drag-2.2.js"></script>
-<script src="jquery.event.drag.live-2.2.js"></script>
-<script src="jquery.event.drop-2.2.js"></script>
-<script src="jquery.event.drop.live-2.2.js"></script>
-<script src="excanvas.min.js"></script>
-		<title>SystemF Bricks Demo (Neuron-Fac)</title>
+<link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
+         rel = "stylesheet">
+<script src = "https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src = "https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+	<title>SystemF Bricks Demo (Neuron-Fac)</title>
 </head>
 
 
 
 <body>
 
-	<p>
-	<input type="button" id="addType" value="Add a new type" />
-	<p>
-
-	<h1>Neuron-Fac bricks demo</h1>
+	<h2>Neuron-Fac bricks demo</h2>
+    <h3>Franck Binard</h3>
 	<center>
 		<h2>Workspace</h2>
-		<div id="workspace"></div>
+		<div id="workspace">
+            <div id="workbench"></div>
+            <div id="garbage">Garbage</div>
+        </div>
 	</center>
-	<div class="drag" style="left:20px;"></div>
-	<div class="drag" style="left:100px;"></div>
-	<div class="drag" style="left:180px;"></div>
-	<div class="drag" style="left:260px;"></div>
+
+	<div class="type" id="NUM" style="left:20px; top:150px;">
+        NUM
+    </div>
+
+	<div class="type" id="NUM-NUM" style="left:20px; top:250px">
+        NUM->NUM
+    </div>
+
+	<div class="type" id="NUM-NUM-NUM" style="left:20px; top:350px">
+        NUM->NUM->NUM
+    </div>
+
+
+
+	<div class="connector drag" id="connector" style="left:20px; top:450px">
+        connector
+        <table width=100%><tr><td class="left-node">left</td><td class="right-node">right</td></tr></table>
+    </div>
+
+    <div id="status" style="background-color:red; width:100%">dsa</div>
 
 
 <style type="text/css">
+#status {
+    height:50px; 
+    margin-top:30px;
+}
 #workspace {
-	height:600px;
-	width:600px;
+	height:700px;
+	width:700px;
 	border: 1px dashed #888;
 	margin-top:30px;
+}
+#workbench {
+    height:90%
+}
+#garbage{
+	width:100%;
+    height:10%;
+    background-color:#111111;
+	border: 1px dashed #888;
+    text-align:100%;
+    color:white;
+}
+
+.type{
+	position: absolute;
+	border: 1px solid #89B;
+	background: #BCE;
+    text-align:center;
+	height: 58px;
+	width: 158px;
 }
 
 .drag {
 	position: absolute;
 	border: 1px solid #89B;
 	background: #BCE;
+    text-align:center;
 	height: 58px;
-	width: 58px;
+	width: 158px;
 	cursor: move;
-	top: 120px;
-	}
-.active {
+    z-index:10;
+}
+#connector{
+    background-color:white;    
+}
+
+.active, #connector.active{
 	background-color: #FF0000;
 	border-color: #8BB; 
 }
