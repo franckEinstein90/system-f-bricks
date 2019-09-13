@@ -8,10 +8,12 @@ const systemF = require('./systemF').systemF
 jQuery(function($) {
 
     let $workspace, init
+
     init = function() {
         try {
-            systemF.onReady()
+            $workspace = $( '#workspace' )
             workspace.onReady($workspace)
+            systemF.onReady()
             systemFBrick.onReady(workspace, systemF)
             return true
         } catch (err) {
@@ -24,7 +26,14 @@ jQuery(function($) {
     }
 
     if (init()) {
-        systemFBrick.run()
+        try {
+            systemFBrick.run()
+        }
+        catch(err){
+            systemFBrick.errorHandler({
+                err, 
+                stage: systemFBrick.appStages.running
+            })
+        }
     }
-
-});
+})
