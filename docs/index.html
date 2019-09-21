@@ -2,13 +2,19 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta http-equiv="X-UA-Compatible" content="IE=8" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=8" />
+    <meta name="description" content="a showcase of the system F system"/>
+    <meta name="author" content="Franck Binard"/>
+    
 <link href="base.css" rel="stylesheet" />
 <link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
          rel = "stylesheet">
-<script src = "https://code.jquery.com/jquery-1.10.2.js"></script>
-<script src = "https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+
+         <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 	<title>SystemF Bricks Demo (Neuron-Fac)</title>
 </head>
 
@@ -18,6 +24,15 @@
 
 	<h2>Neuron-Fac bricks demo</h2>
     <h3>Franck Binard</h3>
+
+
+<table>
+    <tr><td style="vertical-align:top">
+    <div id="typesPanel" style="text-align:center">
+
+    </div>
+</td>
+<td width="70%">
 	<center>
 		<h2>Workspace</h2>
 		<div id="workspace">
@@ -26,7 +41,17 @@
         </div>
 	</center>
 
-	<div class="type" id="NUM" style="left:20px; top:150px;">
+</td>
+<td style="vertical-align: top; text-align:center; width: 15%">
+    <div id="connectorGenerated" class="connector generator">
+        connector
+    </div>
+    <div id="see"></div>
+</td>
+</tr>
+</table>
+
+<!--	<div class="type" id="NUM" style="left:20px; top:150px;">
         NUM
     </div>
 
@@ -37,16 +62,16 @@
 	<div class="type" id="NUM-NUM-NUM" style="left:20px; top:350px">
         NUM->NUM->NUM
     </div>
+-->
 
 
-
-	<div class="connector drag" id="connector" style="left:20px; top:450px">
+<!--	<div class="connector drag" id="connector" style="left:20px; top:450px">
         connector
         <table width=100%><tr><td class="left-node">left</td><td class="right-node">right</td></tr></table>
     </div>
 
     <div id="status" style="background-color:red; width:100%">dsa</div>
-
+-->
 
 <style type="text/css">
 #status {
@@ -62,15 +87,6 @@
 #workbench {
     height:90%
 }
-#garbage{
-	width:100%;
-    height:10%;
-    background-color:#111111;
-	border: 1px dashed #888;
-    text-align:100%;
-    color:white;
-}
-
 .type{
 	position: absolute;
 	border: 1px solid #89B;
@@ -89,9 +105,6 @@
 	width: 158px;
 	cursor: move;
     z-index:10;
-}
-#connector{
-    background-color:white;    
 }
 
 .active, #connector.active{

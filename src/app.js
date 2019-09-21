@@ -1,30 +1,93 @@
 "use strict";
-//const typeSignatures = require('./systemF/typeSignatures').typeSignatures
 
 const app = (function(){
-        let workspace, systemF, types
-/*    let publicChannel,
-        workspace,  
-        signature, types, 
-        makeNewElement, 
-        startDrag, onDrag, stopDrag
+    let workspace, systemF, bricks, 
+        workspaceBricks, 
+        brickStatus, 
+        types, 
+        //helpers
+        pug, 
+        $typesPanel, typesPanel, typePanel, 
+        pugPanel, populateSystemF, 
+        report
+       
+    /*******   helper function ************************/
+    pug = (n,l) => ({name:n, label:l})
 
-    signature =  x => typeSignatures.signature(x)*/
+    workspaceBricks = new Map() 
+
+    report = function(){
+        let strOut = ""
+        workspaceBricks.forEach(
+            (_, htmlID) => strOut += `<h2>${htmlID}</h2>`)
+        $('#see').empty()
+        $('#see').append(strOut)
+    }
+
     types = [
         {   htmlID:"NUM", 
-            numElements: 0, 
-            signature: ["NUM"], 
+            pugs: [ pug('a','a'), 
+                    pug('b','b')] ,
+            signatureDescription: ["NUM"], 
             pos: {left:20, top:150}},
 
-        {   htmlID:"NUM-NUM", numElements: 0, 
-            signature: ["NUM", "NUM"],
+        {   htmlID:"NUM-NUM", 
+            pugs: [ pug('minus', '- x'), 
+                    pug('cos', 'cos x'), 
+                    pug('sin', 'sin x') ],
+            signatureDescription: ["NUM", "NUM"], 
             pos: {left:20, top:250}}, 
 
        {   htmlID:"NUM-NUM-NUM", 
-            numElements: 0, 
-            signature: ["NUM", ["NUM", "NUM"]],
+            pugs: [ pug('minus', 'x - y'), 
+                    pug('mult', 'x * y'), 
+                    pug('plus', 'x + y'), 
+                    pug('div', 'x / y') ],
+            signatureDescription: ["NUM", ["NUM", "NUM"]], 
             pos: {left:20, top:350}}
-    ]
+    ],
+
+    pugPanel = function(ty, pug){
+        return [   `<div id='${pug.name}' class="pug generator">`, 
+                    `${pug.label}`, 
+                    `</div>`].join('')
+    }, 
+
+    typePanel = function(ty){
+
+/*        let panelTitle, pugPanels
+        panelTitle = ty.signature.toString()
+        pugPanels = ty.pugs.map(pug => pugPanel(ty, pug)).join('')
+
+        return    [ `<h3> Type: ${panelTitle} </h3>`,
+                    `<div id='${ty.htmlID}' class="typePanel">`, 
+                    pugPanels, 
+                    `</div>`].join( "" )*/
+    }
+
+    typesPanel = function(){
+
+        let typeIterator, tyPtr
+
+        $typesPanel = $( '#typesPanel' )
+        typeIterator = systemF.typeIterator()
+        tyPtr = typeIt.next()
+
+        while (!tyPtr.done){
+
+            let ty = tyPtr.value;
+            $typesPanel.append(typePanel(ty))
+            tyPtr = typeIterator.next() 
+
+        }
+
+/*           drag: x => app.postMessage('m moving')
+
+
+        types.forEach(ty => $typesPanel.append(createTypePanel(ty)))
+        $('.pug').draggable({
+            })*/
+    }
 /*
     makeNewElement = function(ts){
         let newElementID = `${ts.htmlID}_${ts.numElements + 1}`
@@ -69,20 +132,35 @@ const app = (function(){
            $( this ).removeClass('active')
     }
  */
+    populateSystemF = function(){
+        types.forEach( ty =>{ 
+            systemF.addType(ty.signatureDescription);
+            systemF.addPugs(ty.signatureDescription, ty.pugs);
+        });
+    }
+
     return{
         errorHandler: function({err, stage, message}) {
-
+            console.log(err)
         },
         appStages: {
-            init: 10, 
+            init: x => "init:" + x, 
             running: 20
         },
-        onReady: function(wks, sysF){
-            workspace = wks
-            systemF = sysF
-            systemF.addTypes(types.map(ty => ty.signature))
-            types.forEach( ty => systemF.addPug(ty.signature, ty.pugs))
+
+        onReady: function(wks, sysF, brks){
+            try{
+
+                systemF = sysF; populateSystemF()
+                workspace = wks
+                bricks = brks
+                typesPanel()
+
+            } catch(err){
+                throw (app.appStages.init(err))
+            }
         } ,
+
         run: function(){
          /*   if(!window.Worker){
                 alert("this is not going to work")
@@ -121,6 +199,28 @@ const app = (function(){
             })
         */ 
         },
+
+        updateBricks: function(BrickID, currentState){
+
+            let newStatus
+        
+            if(workspaceBricks.has(BrickID)) {
+                let brick = workspaceBricks.get(BrickID)
+                brick.getRelativePosition()
+            //    newStatus = from( oldStatus, currentStatus  )
+            }
+            else {
+                //create a new brick and add to //workspace
+                let newBrick = new bricks.Brick(BrickID, 
+                                                currentState, 
+                                                workspace)
+        
+                workspaceBricks.set(BrickID, newBrick) 
+        
+            }
+            report()
+        }, 
+
         addNewTSElements: function(){
             types.forEach( ts => makeNewElement(ts) ) 
         } ,
@@ -130,8 +230,8 @@ const app = (function(){
             makeNewElement(ts)
         } ,
 
-        broadcastPublic: function(msg){
-            publicChannel.postMessage(msg)
+        postMessage: function(msg){
+           console.log('|') 
         }
     }
 })()
