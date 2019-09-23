@@ -82,6 +82,8 @@ const systemFBrick = (function(){
         onReady: function(wks){
             workspace = wks
             systemFBrick.addNewTSElements()
+            $('.connector').draggable()
+ 
         } ,
         run: function(){
          /*   if(!window.Worker){

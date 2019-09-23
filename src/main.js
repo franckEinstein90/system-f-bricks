@@ -1,8 +1,7 @@
 "use strict";
 
-const systemFBrick = require('./systemFBrick').systemFBrick
+const systemFBricks = require('./systemFBrick').systemFBrick
 const workspace = require('./ui/workspace').workspace
-const systemF = require('./systemF').systemF
 
 
 jQuery(function($) {
@@ -13,8 +12,8 @@ jQuery(function($) {
         try {
             $workspace = $( '#workspace' )
             workspace.onReady($workspace)
-            systemF.onReady()
-            systemFBrick.onReady(workspace, systemF)
+//            systemF.onReady()
+            systemFBrick.onReady(workspace)
             return true
         } catch (err) {
             systemFBrick.errorHandler({
