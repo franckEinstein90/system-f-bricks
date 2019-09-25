@@ -1,0 +1,159 @@
+* {
+	outline: none;
+	}
+html {
+	font: 14px/1.5em Verdana, Arial, Helvetica, sans-serif;
+	}	
+body {
+	margin: 0;	
+	padding: 20px 20px 5px 20px;
+	background: #FFF;
+	color: #222;
+	}
+a {
+	color: #137;
+	text-decoration: none;
+	}
+a:hover,
+a:active {
+	/*color: #173;*/
+	text-decoration: underline;
+	}
+h1 {
+	margin: 0;	
+	font: normal 32px/1em Tahoma, Verdana, Geneva, sans-serif;
+	color: #444;
+	}
+h2 {
+	margin: 0;
+	font: normal 24px/1em Tahoma, Verdana, Geneva, sans-serif;
+	color: #333;
+	}
+fieldset {
+	border: 1px solid #AAA;
+	padding: 0 1em;
+	margin: 1em 0;
+	}	
+label {
+	display: block;
+	text-transform: uppercase;
+	font-size: 10px;
+	}		
+code {
+	display: block;
+	color: #444;
+	padding: 8px 16px;
+	margin: 0 0 8px 0;
+	border: 1px dotted #AAA;
+	border-width: 1px 0;
+	white-space: pre;
+	font-family: "Courier New", Courier, monospace;
+	}
+li {
+	margin: 1em 0;
+	}
+ul li {	
+	list-style-type: circle;
+	}
+
+
+#typesPanel{
+
+	background-color: #AAA;
+	left: 10px; 
+	top: 160px; 
+	width: 200px;
+	height: 600px;  
+}
+
+.brickGenerator{
+	position:absolute; 
+	background-color: olive;
+	height:140px;
+	width: 190px;
+	border-right: orange;
+	border-right-width: 2px; 
+	border-right-style: ridge;
+	border-bottom: #888; 
+	border-bottom-width: 2px; 
+	border-bottom-style: outset;
+}
+
+
+.typeSignatureElement{
+	width:10px;
+	height:10px;
+	border: 1px black inset;
+	box-shadow: 3px 1px;
+		
+}
+
+.brick{
+	border: 3px;
+	border-style: dashed;
+
+	width:100px;
+	height: 30px;
+
+	text-align: center; 
+	vertical-align: middle;
+
+	font-size: 10pt;
+	cursor: grab; 
+}
+
+.typeBrick{
+	width: 140px;
+	padding-left:30px; 
+	margin-left:50px;
+}
+
+.brick.typeBrick.active{
+	border-color:red;
+}
+#garbage{
+	width:100%;
+    height:10%;
+    background-color:#F11111;
+	border: 1px dashed #888;
+    text-align:100%;
+    color:white;
+}
+
+
+.pugBrick{
+		border-radius: 50%;
+		border: 12px solid #3498db;
+		width: 40px;
+		height: 40px;
+		text-align: center;
+		box-shadow: 3px 3px; 
+	  }
+
+.brick.pugBrick.active{
+	background-color: aqua;
+	box-shadow: 3px 3px; 
+}
+
+.typedPug{
+
+}
+
+.connectorBrick{
+		border: 14px solid mediumseagreen;
+		border-radius: 50%;
+		width: 50px;
+		height: 50px;
+	  }
+.brick.connectorBrick.active{
+	background-color: #137;
+}
+
+.group{
+	border-width:3px;
+	border-style:solid;
+	border-color:red;
+}
+.group>TR>TD{
+	text-align: center
+}
