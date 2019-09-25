@@ -11490,7 +11490,132 @@ return typeDetect;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],55:[function(require,module,exports){
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+  return ([bth[buf[i++]], bth[buf[i++]], 
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]]]).join('');
+}
+
+module.exports = bytesToUuid;
+
+},{}],56:[function(require,module,exports){
+// Unique ID creation requires a high quality random # generator.  In the
+// browser this is a little complicated due to unknown quality of Math.random()
+// and inconsistent support for the `crypto` API.  We do the best we can via
+// feature-detection
+
+// getRandomValues needs to be invoked in a context where "this" is a Crypto
+// implementation. Also, find the complete implementation of crypto on IE11.
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
+
+if (getRandomValues) {
+  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
+  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+  module.exports = function whatwgRNG() {
+    getRandomValues(rnds8);
+    return rnds8;
+  };
+} else {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var rnds = new Array(16);
+
+  module.exports = function mathRNG() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return rnds;
+  };
+}
+
+},{}],57:[function(require,module,exports){
+var rng = require('./lib/rng');
+var bytesToUuid = require('./lib/bytesToUuid');
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rng)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid(rnds);
+}
+
+module.exports = v4;
+
+},{"./lib/bytesToUuid":55,"./lib/rng":56}],58:[function(require,module,exports){
 "use strict";
+
+let appUtils = (function(){
+    return{
+
+        isValidHtmlId: str => /^[a-z][a-z\-]+[a-z]$/.test(str), 
+
+        StringRegistrar: function(){
+            this.store = new Map()
+        }
+    }
+}())
+
+appUtils.StringRegistrar.prototype = {
+    missing: function(str){
+        if(this.store.has(str))
+            {
+                return false
+            }
+        else{
+            return true; 
+        }
+    },
+    get: function(str) {
+        return this.store.get(str)
+    },
+    add: function(str, value) {//throws if already exists
+        if(this.missing(str)){
+            return this.store.set(str, value)
+        }
+        throw "Element already in set"
+    }
+}
 
 const app = (function(){
     let workspace, systemF, bricks, 
@@ -11498,9 +11623,8 @@ const app = (function(){
         brickStatus, 
         types, 
         //helpers
-        pug, 
-        $typesPanel, typesPanel, typePanel, 
-        pugPanel, populateSystemF, 
+        pug, $typesPanel, renderTypesPanel, 
+        populateSystemF, 
         report
        
     /*******   helper function ************************/
@@ -11517,121 +11641,60 @@ const app = (function(){
     }
 
     types = [
-        {   htmlID:"NUM", 
-            pugs: [ pug('a','a'), 
-                    pug('b','b')] ,
+        {   htmlID:"NUM",
+            color: 'yellow' ,
+            pugs: [ pug('user-a','a'), 
+                    pug('user-b','b')] ,
             signatureDescription: ["NUM"], 
             pos: {left:20, top:150}},
 
         {   htmlID:"NUM-NUM", 
-            pugs: [ pug('minus', '- x'), 
-                    pug('cos', 'cos x'), 
-                    pug('sin', 'sin x') ],
+            color: 'red',
+            pugs: [ pug('minus', '-'), 
+                    pug('cos', 'cos'), 
+                    pug('sin', 'sin') ],
             signatureDescription: ["NUM", "NUM"], 
             pos: {left:20, top:250}}, 
 
-       {   htmlID:"NUM-NUM-NUM", 
-            pugs: [ pug('minus', 'x - y'), 
-                    pug('mult', 'x * y'), 
-                    pug('plus', 'x + y'), 
-                    pug('div', 'x / y') ],
+       {    htmlID:"NUM-NUM-NUM", 
+            color: 'blue',
+            pugs: [ pug('minus', '-'), 
+                    pug('mult', '*'), 
+                    pug('plus', '+'), 
+                    pug('div', '/') ],
             signatureDescription: ["NUM", ["NUM", "NUM"]], 
             pos: {left:20, top:350}}
     ],
 
-    pugPanel = function(ty, pug){
-        return [   `<div id='${pug.name}' class="pug generator">`, 
-                    `${pug.label}`, 
-                    `</div>`].join('')
-    }, 
-
-    typePanel = function(ty){
-
-/*        let panelTitle, pugPanels
-        panelTitle = ty.signature.toString()
-        pugPanels = ty.pugs.map(pug => pugPanel(ty, pug)).join('')
-
-        return    [ `<h3> Type: ${panelTitle} </h3>`,
-                    `<div id='${ty.htmlID}' class="typePanel">`, 
-                    pugPanels, 
-                    `</div>`].join( "" )*/
-    }
-
-    typesPanel = function(){
-
-        let typeIterator, tyPtr
-
+    renderTypesPanel = function(){
         $typesPanel = $( '#typesPanel' )
-        typeIterator = systemF.typeIterator()
-        tyPtr = typeIt.next()
-
-        while (!tyPtr.done){
-
-            let ty = tyPtr.value;
-            $typesPanel.append(typePanel(ty))
-            tyPtr = typeIterator.next() 
-
-        }
-
-/*           drag: x => app.postMessage('m moving')
-
-
-        types.forEach(ty => $typesPanel.append(createTypePanel(ty)))
-        $('.pug').draggable({
-            })*/
+        let offset = 10 
+        systemF.types.forEach(ty =>{
+            let typeBricks, pugBricks; 
+            typeBricks = workspace.makeTypeBrickGenerator(ty)
+            $typesPanel.append(
+                    [`<DIV id="${ty.alias}" class="brickGenerator" `, 
+                        `style='top:${offset.toString()}px;'>`,
+                       typeBricks, 
+                       `<table style='top:${(offset+50).toString()}px'>${pugBricks}</table>`,
+                      "</DIV>"].join('')
+            )
+            $(ty.alias).children().css('left', "10px")
+            $(ty.alias).children().css('top', offset.toString() + "px")
+            $('.brick').draggable();
+            offset += 150 
+        })
     }
-/*
-    makeNewElement = function(ts){
-        let newElementID = `${ts.htmlID}_${ts.numElements + 1}`
-        let newTS = [
-                    `<DIV class="drag" id="${newElementID}" `,
-                    `style="top:${ts.pos.top}px; left:${ts.pos.left}px"> `, 
-                    `${ts.signature.description}</DIV>`].join('')
-        $( '#' + ts.htmlID ).after(newTS)
-        $( '#'+ newElementID )
-            .draggable({
-                start:startDrag, 
-                drag:onDrag, 
-                stop:stopDrag 
-            })
-            .droppable({
-                over: function( event, ui){
-                    if(workspace.contains($(this))){
-                    let elementID = $( this ).attr('id').split("_")
-                    let thisTS = types.find( type => type.htmlID === elementID[0])
-                    let otherGuy = ui.draggable.attr('id')
 
-                    console.log(`${elementID} being checked out by ${otherGuy}`)
-                    }
-                }
-            })
-
-
-        ts.numElements += 1
-    },
-
-    publicChannel = new BroadcastChannel('public'),
-
-    startDrag = function( ev, dd ){
-			$( this ).addClass('active')
-    },
-
-    onDrag = function( ev, dd ){
-           $('#status').text( $(this).attr('id'))
-    },
-
-    stopDrag =   function(){
-           $( this ).removeClass('active')
-    }
- */
-    populateSystemF = function(){
+   populateSystemF = function(){
         types.forEach( ty =>{ 
-            systemF.addType(ty.signatureDescription);
+            systemF.addType(ty.signatureDescription, ty.htmlID, ty.color);
             systemF.addPugs(ty.signatureDescription, ty.pugs);
         });
     }
 
     return{
+        appUtils: appUtils, 
         errorHandler: function({err, stage, message}) {
             console.log(err)
         },
@@ -11640,20 +11703,20 @@ const app = (function(){
             running: 20
         },
 
-        onReady: function(wks, sysF, brks){
+        onReady: function(wks, sysF){
             try{
 
-                systemF = sysF; populateSystemF()
+                systemF = sysF; 
+                populateSystemF()
                 workspace = wks
-                bricks = brks
-                typesPanel()
+                renderTypesPanel()
 
             } catch(err){
                 throw (app.appStages.init(err))
             }
         } ,
 
-        run: function(){
+        onRun: function(){
          /*   if(!window.Worker){
                 alert("this is not going to work")
             }
@@ -11732,7 +11795,7 @@ module.exports = {
     app
 }
 
-},{}],56:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 "use strict";
 
 const app = require('../app').app
@@ -11766,7 +11829,7 @@ jQuery(function($) {
 
     if (init()) {
         try {
-            app.run()
+            app.onRun()
         }
         catch(err){
             app.errorHandler({
@@ -11777,7 +11840,7 @@ jQuery(function($) {
     }
     
 })
-},{"../app":55,"./programs/context":57,"./systemF":58,"./ui/bricks.js":61,"./ui/workspace":62}],57:[function(require,module,exports){
+},{"../app":58,"./programs/context":60,"./systemF":61,"./ui/bricks.js":65,"./ui/workspace":66}],60:[function(require,module,exports){
 "use strict";
 
 const app = require('../../app').app
@@ -11815,7 +11878,7 @@ const context = (function(){
 module.exports = {
     context
 }
-},{"../../app":55}],58:[function(require,module,exports){
+},{"../../app":58}],61:[function(require,module,exports){
 "use strict";
 
 const app = require('../app.js').app
@@ -11825,9 +11888,41 @@ const context = require('./programs/context').context
 
 const systemF = (function(){
 
-    let systemTypes = new Map();
+
+    let systemTypes, aliases, registerType, registerAlias
+
+    systemTypes = new Map()
+    aliases = new Map()
+
+    registerType = function(typeSignature, {alias, color}){
+        let key = typeSignature.toString({format:'index'})
+        if(systemTypes.has(key)){
+            throw "alredy in register"
+        }
+        systemTypes.set( key, new types.Type(typeSignature, {alias, color}) ) 
+    }
+
+    registerAlias = function( typeSignature, alias ){
+        if(aliases.has(alias)){
+            throw "already in register"
+        }
+        aliases.set(alias, typeSignature)
+    }
 
     return {
+
+        types: {
+                forEach: function(callBack){
+                    let typeIterator, tyPtr
+                    typeIterator = systemF.typeIterator()
+                    tyPtr = typeIterator.next()
+            
+                    while (!tyPtr.done){
+                        callBack(tyPtr.value);
+                        tyPtr = typeIterator.next() 
+                    }
+                }
+        },
         typeIterator: function(){
             return systemTypes.values()
         },
@@ -11835,14 +11930,16 @@ const systemF = (function(){
         onReady: function( ){
         },
 
-        addType: function(signatureDescription){
-            let typeSignature = ts.signature(
-                context, 
-                signatureDescription)
+        addType: function(signatureDescription, alias="", color){
+            let typeSignature
+            try{
+                typeSignature = ts.signature( context, signatureDescription)
+                registerType(typeSignature, {alias, color})
+                registerAlias(typeSignature, alias)
 
-            systemTypes.set(
-                typeSignature.toString(), 
-                new types.Type(typeSignature) )
+            }catch(e){
+
+            }
         },
 
         addTypes: function(){
@@ -11850,10 +11947,9 @@ const systemF = (function(){
         },
 
         addPug: function(signatureDescription, pug){
-            let typeSignature = ts.signature(context, 
-                signatureDescription)
-            if(systemTypes.has(typeSignature.toString())){
-                systemTypes.get(typeSignature.toString()).addPug(pug)
+            let typeSignature = ts.signature(context, signatureDescription)
+            if(systemTypes.has(typeSignature.key)){
+                systemTypes.get(typeSignature.key).addPug(pug)
             }
         }, 
 
@@ -11861,15 +11957,60 @@ const systemF = (function(){
             pugs.forEach(pug => {
                this.addPug(typeSignature, pug) 
             });
-        }
+        },
 
+        stringify: function(sysFObject, options={}){
+            if(options.format){
+                switch(options.format){
+                    case "short":
+                        if(sysFObject.alias !== ""){
+                            return sysFObject.alias;
+                            break; 
+                        }
+                    default:
+                        return sysFObject.toString()
+                        break
+                }
+            }
+        }
     }
 })()
 
 module.exports = {
     systemF
 }
-},{"../app.js":55,"./programs/context":57,"./systemF/typeSignatures":59,"./systemF/types":60}],59:[function(require,module,exports){
+},{"../app.js":58,"./programs/context":60,"./systemF/typeSignatures":63,"./systemF/types":64}],62:[function(require,module,exports){
+"use strict";
+
+const app = require('../../app').app
+
+const pugs = (function(){
+   
+   
+    return{
+
+        Pug: function({name, label, typeID}){
+            if(name === undefined){
+                throw pugs.errors.invalidName
+            }
+            if(!app.appUtils.isValidHtmlId(name)){
+                throw pugs.errors.invalidName
+            }
+            this.name = name
+            this.typeID = typeID || null
+            this.label = label || name
+        }, 
+
+        errors:{
+            invalidName: "Invalid Pug Name"
+        }
+    }
+})()
+
+module.exports = {
+    pugs
+}
+},{"../../app":58}],63:[function(require,module,exports){
 "use strict";
 
 const expect = require('chai').expect
@@ -11975,6 +12116,9 @@ const typeSignatures = (function(){
 
 
 typeSignatures.TypeSignature.prototype = {
+    get key(){
+        return this.toString()
+    },
 
     toString: function(){
         let signatureDescription
@@ -12002,47 +12146,104 @@ typeSignatures.TypeSignature.prototype = {
 module.exports = {
     typeSignatures
 }
-},{"chai":2,"deep-equal":36}],60:[function(require,module,exports){
+},{"chai":2,"deep-equal":36}],64:[function(require,module,exports){
 "use strict"; 
 
+const uuidv4 = require('uuid/v4')
+const pugs = require('./pugs.js').pugs
+
 const types = (function(){
+    let that = this
 
     return{
-        Type: function(typeSignature){
+
+        Type: function(typeSignature, {alias, color}){
             this.typeSignature = typeSignature;
+            this.color = color
             this.pugs = [];
+            this.alias = alias || typeSignature.toString();
+            this.uuid = uuidv4();
         }
+
     }
 })();
 
-types.Type.prototype.addPug = function(pug){
-    this.pugs.push(pug)
+types.Type.prototype.addPug = function({name, label}){
+    this.pugs.push(new pugs.Pug({name, label, typeID:this.uuid}))
+}
+types.Type.prototype.toString = function(options){
+    return this.typeSignature.toString(options)
 }
 module.exports = {
     types
 }
-},{}],61:[function(require,module,exports){
+},{"./pugs.js":62,"uuid/v4":57}],65:[function(require,module,exports){
 'use strict';
 
-const bricks = (function(){
-
+const brickStatusCodes = (function(){
     return{
-        Brick: function(htmlID, state, workspace){
-            this.jqHandle = $('#' + htmlID)
-            this.state = state
-            this.workspace = workspace
-            this.getRelativePosition()
+        //status codes for objects in workspace
+        rendered:       0b0000001,
+        inWorkspace:    0b0000010,
+        moving:         0b0000100,
+        grouped:        0b0001000, 
+        newObject:      0b0010000, 
+        destroyed:      0b1000000
+    }
+})()
+
+const bricks = (function(){
+    let $workspace, cssClasses
+
+    cssClasses = {
+        type:"typeBrick", 
+        connector: "brick typeBrick",
+        pug: "brick pugBrick", 
+        group: "brick groupBrick"
+    }
+    return{
+        setWorkspace(wks){
+            $workspace = wks
         }, 
 
-        //status codes for objects in workspace
-        brickStatus: {
-            inWorkspace:    0b000001,
-            moving:         0b000010,
-            grouped:        0b000100, 
-            newObject:      0b001000, 
-            destroyed:      0b100000
+        Brick: function({htmlID, state, label, backgroundColor}){
+            this.htmlID = htmlID 
+            this.state = state || 0
+            this.label = label
+            this.backgroundColor = backgroundColor
+            this.cssClasses = ["brick"]
+        },
+
+        TypeBrick: function(ty, idSuffix) {
+
+            let brick = new bricks.Brick({
+                htmlID: ty.alias + idSuffix, 
+                state: 0, 
+                label: ty.alias, 
+                backgroundColor: ty.color})
+
+            brick.cssClasses.push(cssClasses.type)
+            return brick; 
         }, 
-        
+
+        ConnectorBrick: function(htmlID, brickState){
+
+        }, 
+
+        PugBrick: function(ty, pug, idSuffix){
+            let brick = new bricks.Brick({
+                htmlID: ty.alias + "_" + pug.name + idSuffix, 
+                state: 0, 
+                label: pug.label, 
+                backgroundColor: ty.color})
+
+        }, 
+
+        GroupBrick: function(htmlID, brickState){
+
+        }, 
+
+       
         not: function(state){
             return 23;
         }
@@ -12058,68 +12259,143 @@ bricks.Brick.prototype.getRelativePosition = function(){
         bottom: position.top + this.jqHandle.innerHeight()
     }
 }
+
+bricks.Brick.prototype.html = function(){
+    return [`<div width='150' height='50'  `, 
+            `class="${this.cssClasses.join(' ')}" `, 
+            ` style='background-color:${this.backgroundColor}'>`, 
+            this.label, 
+            `</div>`].join('')
+}
+
 bricks.Brick.prototype.not = function( status ){
     this.status -= status
 }
 
 
 module.exports = {
+    brickStatusCodes, 
     bricks
 }
 
-},{}],62:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 "use strict";
 
 const app = require('../../app').app
+const brickStatusCodes = require('./bricks').brickStatusCodes
 const bricks = require('./bricks').bricks
+
+const managedBricks = (function(){
+    let _managedBricks = new Map()
+    return{
+        manageBrick: function(brick){
+            _managedBricks.set(brick.htmlID, brick)
+        }, 
+        filter: function(predFunc){
+            let brickIterator, 
+                resultArray,
+                brPtr
+
+            brickIterator = _managedBricks.values()
+            resultArray = []
+            brPtr = brickIterator.next()
+            while (!brPtr.done){
+                if(predFunc(brPtr.value)){
+                    resultArray.push(brPtr.value)
+                }
+                brPtr = brickIterator.next() 
+            }
+            return resultArray
+        }, 
+    }
+})()
+
 const workspace = (function(){
 
     let $workspace,  
         brickStatus, 
-        initEventListeners
+        initEventListeners, 
+        pugPanel, 
+        typeBrickGenerator, connectorBrickGenerator, pugBrickGenerator
 
-    
-   
+
+
     initEventListeners = function(){
 
         $workspace.droppable({
 
                 drop: function(event, ui){
-
-                    app.updateBricks( ui.draggable.attr('id'),  
-                        bricks.brickStatus.inWorkspace | 
-                        bricks.not(bricks.brickStatus.moving) ) 
-
                     $( this ).removeClass( 'active' )
                 },
 
                 out: function(event, ui){
-                    app.updateBricks( ui.draggable.attr('id'), 
-                        not( bricks.brickStatus.inWorkSpace ))
-                         
-                    $( this ).removeClass( 'active')
+                   $( this ).removeClass( 'active')
                 },
 
                 over: function(event, ui){
-                     console.log("enter")
-                     app.updateBricks( ui.draggable.attr('id'),
-                        bricks.brickStatus.inWorkspace | 
-                        bricks.brickStatus.moving ) 
-
-                    $( this ).addClass('active')
+                   $( this ).addClass('active')
                 }
         })
     }
- 
+
+    pugPanel = function(pug){
+        let pugBricks = [1,2,3,4,5,6,7]
+        .map( count => pugBrick(pug, count))
+        .join('')
+
+    return [   `<div id='${pug.name}' class="pugs">`, 
+                pugBricks
+                `</div>`].join('')
+    }
+   
+  
     return{
 
         onReady:function(workspace){
-
             $workspace = workspace
             initEventListeners()
+       }, 
+       makePugBrickGenerator: function(type, pug){
+
+           if(this.pugIDRegistrar === undefined){
+            this.pugIDRegistrar = new app.appUtils.StringRegistrar()
+            }
+
+            if(this.pugIDRegistrar.missing(pug.name)){
+                this.pugIDRegistrar.add(pug.name, {count:1})
+            }
+            for(let i = 0; i < 10; i++){
+
+                this.pugIDRegistrar.get(pug.name).count += 1; 
+            } 
+
+        },
+
+        makeTypeBrickGenerator: function(type){
+        let htmlCode = ""
+
+        this.brickRegister = this.brickRegister || new app.appUtils.StringRegistrar()
+
+        if(this.brickRegister.missing(type.alias)){
+            this.brickRegister.add(type.alias, {count: 1})  
+        }
+        for(let i = 0; i < 10; i++){
+            let idIndex = this.brickRegister.get(type.alias).count
+            let newBrick = new bricks.TypeBrick(type, "_" + idIndex)
+            managedBricks.manageBrick(newBrick)
+            this.brickRegister.get(type.alias).count += 1
+            htmlCode += newBrick.html()
+            newBrick.state = brickStatusCodes.rendered
+        }
+        return htmlCode
+ 
+        drawBricks = managedBricks.filter( 
+            brick => brick.state === 0
+            )
+        //draw each brick
+        return drawBricks.map(brick=>brick.html()).join('')
 
        }
-
    }
 })()
 
@@ -12127,4 +12403,4 @@ module.exports = {
     workspace
 }
 
-},{"../../app":55,"./bricks":61}]},{},[56]);
+},{"../../app":58,"./bricks":65}]},{},[59]);

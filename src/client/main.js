@@ -31,7 +31,7 @@ jQuery(function($) {
 
     if (init()) {
         try {
-            app.run()
+            app.onRun()
         }
         catch(err){
             app.errorHandler({

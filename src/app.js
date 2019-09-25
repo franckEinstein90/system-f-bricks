@@ -1,14 +1,45 @@
 "use strict";
 
+let appUtils = (function(){
+    return{
+
+        isValidHtmlId: str => /^[a-z][a-z\-]+[a-z]$/.test(str), 
+
+        StringRegistrar: function(){
+            this.store = new Map()
+        }
+    }
+}())
+
+appUtils.StringRegistrar.prototype = {
+    missing: function(str){
+        if(this.store.has(str))
+            {
+                return false
+            }
+        else{
+            return true; 
+        }
+    },
+    get: function(str) {
+        return this.store.get(str)
+    },
+    add: function(str, value) {//throws if already exists
+        if(this.missing(str)){
+            return this.store.set(str, value)
+        }
+        throw "Element already in set"
+    }
+}
+
 const app = (function(){
     let workspace, systemF, bricks, 
         workspaceBricks, 
         brickStatus, 
         types, 
         //helpers
-        pug, 
-        $typesPanel, typesPanel, typePanel, 
-        pugPanel, populateSystemF, 
+        pug, $typesPanel, renderTypesPanel, 
+        populateSystemF, 
         report
        
     /*******   helper function ************************/
@@ -25,121 +56,60 @@ const app = (function(){
     }
 
     types = [
-        {   htmlID:"NUM", 
-            pugs: [ pug('a','a'), 
-                    pug('b','b')] ,
+        {   htmlID:"NUM",
+            color: 'yellow' ,
+            pugs: [ pug('user-a','a'), 
+                    pug('user-b','b')] ,
             signatureDescription: ["NUM"], 
             pos: {left:20, top:150}},
 
         {   htmlID:"NUM-NUM", 
-            pugs: [ pug('minus', '- x'), 
-                    pug('cos', 'cos x'), 
-                    pug('sin', 'sin x') ],
+            color: 'red',
+            pugs: [ pug('minus', '-'), 
+                    pug('cos', 'cos'), 
+                    pug('sin', 'sin') ],
             signatureDescription: ["NUM", "NUM"], 
             pos: {left:20, top:250}}, 
 
-       {   htmlID:"NUM-NUM-NUM", 
-            pugs: [ pug('minus', 'x - y'), 
-                    pug('mult', 'x * y'), 
-                    pug('plus', 'x + y'), 
-                    pug('div', 'x / y') ],
+       {    htmlID:"NUM-NUM-NUM", 
+            color: 'blue',
+            pugs: [ pug('minus', '-'), 
+                    pug('mult', '*'), 
+                    pug('plus', '+'), 
+                    pug('div', '/') ],
             signatureDescription: ["NUM", ["NUM", "NUM"]], 
             pos: {left:20, top:350}}
     ],
 
-    pugPanel = function(ty, pug){
-        return [   `<div id='${pug.name}' class="pug generator">`, 
-                    `${pug.label}`, 
-                    `</div>`].join('')
-    }, 
-
-    typePanel = function(ty){
-
-/*        let panelTitle, pugPanels
-        panelTitle = ty.signature.toString()
-        pugPanels = ty.pugs.map(pug => pugPanel(ty, pug)).join('')
-
-        return    [ `<h3> Type: ${panelTitle} </h3>`,
-                    `<div id='${ty.htmlID}' class="typePanel">`, 
-                    pugPanels, 
-                    `</div>`].join( "" )*/
-    }
-
-    typesPanel = function(){
-
-        let typeIterator, tyPtr
-
+    renderTypesPanel = function(){
         $typesPanel = $( '#typesPanel' )
-        typeIterator = systemF.typeIterator()
-        tyPtr = typeIt.next()
-
-        while (!tyPtr.done){
-
-            let ty = tyPtr.value;
-            $typesPanel.append(typePanel(ty))
-            tyPtr = typeIterator.next() 
-
-        }
-
-/*           drag: x => app.postMessage('m moving')
-
-
-        types.forEach(ty => $typesPanel.append(createTypePanel(ty)))
-        $('.pug').draggable({
-            })*/
+        let offset = 10 
+        systemF.types.forEach(ty =>{
+            let typeBricks, pugBricks; 
+            typeBricks = workspace.makeTypeBrickGenerator(ty)
+            $typesPanel.append(
+                    [`<DIV id="${ty.alias}" class="brickGenerator" `, 
+                        `style='top:${offset.toString()}px;'>`,
+                       typeBricks, 
+                       `<table style='top:${(offset+50).toString()}px'>${pugBricks}</table>`,
+                      "</DIV>"].join('')
+            )
+            $(ty.alias).children().css('left', "10px")
+            $(ty.alias).children().css('top', offset.toString() + "px")
+            $('.brick').draggable();
+            offset += 150 
+        })
     }
-/*
-    makeNewElement = function(ts){
-        let newElementID = `${ts.htmlID}_${ts.numElements + 1}`
-        let newTS = [
-                    `<DIV class="drag" id="${newElementID}" `,
-                    `style="top:${ts.pos.top}px; left:${ts.pos.left}px"> `, 
-                    `${ts.signature.description}</DIV>`].join('')
-        $( '#' + ts.htmlID ).after(newTS)
-        $( '#'+ newElementID )
-            .draggable({
-                start:startDrag, 
-                drag:onDrag, 
-                stop:stopDrag 
-            })
-            .droppable({
-                over: function( event, ui){
-                    if(workspace.contains($(this))){
-                    let elementID = $( this ).attr('id').split("_")
-                    let thisTS = types.find( type => type.htmlID === elementID[0])
-                    let otherGuy = ui.draggable.attr('id')
 
-                    console.log(`${elementID} being checked out by ${otherGuy}`)
-                    }
-                }
-            })
-
-
-        ts.numElements += 1
-    },
-
-    publicChannel = new BroadcastChannel('public'),
-
-    startDrag = function( ev, dd ){
-			$( this ).addClass('active')
-    },
-
-    onDrag = function( ev, dd ){
-           $('#status').text( $(this).attr('id'))
-    },
-
-    stopDrag =   function(){
-           $( this ).removeClass('active')
-    }
- */
-    populateSystemF = function(){
+   populateSystemF = function(){
         types.forEach( ty =>{ 
-            systemF.addType(ty.signatureDescription);
+            systemF.addType(ty.signatureDescription, ty.htmlID, ty.color);
             systemF.addPugs(ty.signatureDescription, ty.pugs);
         });
     }
 
     return{
+        appUtils: appUtils, 
         errorHandler: function({err, stage, message}) {
             console.log(err)
         },
@@ -148,20 +118,20 @@ const app = (function(){
             running: 20
         },
 
-        onReady: function(wks, sysF, brks){
+        onReady: function(wks, sysF){
             try{
 
-                systemF = sysF; populateSystemF()
+                systemF = sysF; 
+                populateSystemF()
                 workspace = wks
-                bricks = brks
-                typesPanel()
+                renderTypesPanel()
 
             } catch(err){
                 throw (app.appStages.init(err))
             }
         } ,
 
-        run: function(){
+        onRun: function(){
          /*   if(!window.Worker){
                 alert("this is not going to work")
             }

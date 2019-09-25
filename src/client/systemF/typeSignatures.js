@@ -103,6 +103,9 @@ const typeSignatures = (function(){
 
 
 typeSignatures.TypeSignature.prototype = {
+    get key(){
+        return this.toString()
+    },
 
     toString: function(){
         let signatureDescription

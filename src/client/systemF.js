@@ -7,9 +7,41 @@ const context = require('./programs/context').context
 
 const systemF = (function(){
 
-    let systemTypes = new Map();
+
+    let systemTypes, aliases, registerType, registerAlias
+
+    systemTypes = new Map()
+    aliases = new Map()
+
+    registerType = function(typeSignature, {alias, color}){
+        let key = typeSignature.toString({format:'index'})
+        if(systemTypes.has(key)){
+            throw "alredy in register"
+        }
+        systemTypes.set( key, new types.Type(typeSignature, {alias, color}) ) 
+    }
+
+    registerAlias = function( typeSignature, alias ){
+        if(aliases.has(alias)){
+            throw "already in register"
+        }
+        aliases.set(alias, typeSignature)
+    }
 
     return {
+
+        types: {
+                forEach: function(callBack){
+                    let typeIterator, tyPtr
+                    typeIterator = systemF.typeIterator()
+                    tyPtr = typeIterator.next()
+            
+                    while (!tyPtr.done){
+                        callBack(tyPtr.value);
+                        tyPtr = typeIterator.next() 
+                    }
+                }
+        },
         typeIterator: function(){
             return systemTypes.values()
         },
@@ -17,14 +49,16 @@ const systemF = (function(){
         onReady: function( ){
         },
 
-        addType: function(signatureDescription){
-            let typeSignature = ts.signature(
-                context, 
-                signatureDescription)
+        addType: function(signatureDescription, alias="", color){
+            let typeSignature
+            try{
+                typeSignature = ts.signature( context, signatureDescription)
+                registerType(typeSignature, {alias, color})
+                registerAlias(typeSignature, alias)
 
-            systemTypes.set(
-                typeSignature.toString(), 
-                new types.Type(typeSignature) )
+            }catch(e){
+
+            }
         },
 
         addTypes: function(){
@@ -32,10 +66,9 @@ const systemF = (function(){
         },
 
         addPug: function(signatureDescription, pug){
-            let typeSignature = ts.signature(context, 
-                signatureDescription)
-            if(systemTypes.has(typeSignature.toString())){
-                systemTypes.get(typeSignature.toString()).addPug(pug)
+            let typeSignature = ts.signature(context, signatureDescription)
+            if(systemTypes.has(typeSignature.key)){
+                systemTypes.get(typeSignature.key).addPug(pug)
             }
         }, 
 
@@ -43,8 +76,22 @@ const systemF = (function(){
             pugs.forEach(pug => {
                this.addPug(typeSignature, pug) 
             });
-        }
+        },
 
+        stringify: function(sysFObject, options={}){
+            if(options.format){
+                switch(options.format){
+                    case "short":
+                        if(sysFObject.alias !== ""){
+                            return sysFObject.alias;
+                            break; 
+                        }
+                    default:
+                        return sysFObject.toString()
+                        break
+                }
+            }
+        }
     }
 })()
 

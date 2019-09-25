@@ -57,16 +57,38 @@ ul li {
 	}
 
 
-.typePanel{
+#typesPanel{
+
+	position: absolute; 
+	background-color: #AAA;
+	left: 10px; 
+	top: 160px; 
+	width: 200px;
+	height: 600px;  
 	text-align:center;
+	border-color: yellow; 
+	border-width: 1px;
+	border-style: inset; 
 }
 
+.brickGenerator{
+	position:absolute; 
+	background-color: olive;
+	height:140px;
+	width: 190px;
+	border-right: orange;
+	border-right-width: 2px; 
+	border-right-style: ridge;
+	border-bottom: #888; 
+	border-bottom-width: 2px; 
+	border-bottom-style: outset;
+}
 .pug{
 	background-color:red;
 	color:white;
 }
 
-.generator{
+.brick{
 	padding-bottom:  2px;
 	padding-right: 10px;
 	padding-left:10px; 
@@ -82,10 +104,15 @@ ul li {
 	text-align: center; 
 	vertical-align: middle;
 
-	font-size: 20pt;
+	font-size: 10pt;
 	cursor: grab; 
 }
 
+.typeBrick{
+	width: 140px; 
+	position: absolute;
+	
+}
 #garbage{
 	width:100%;
     height:10%;
