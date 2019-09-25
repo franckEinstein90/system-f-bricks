@@ -10,12 +10,13 @@
     <meta name="author" content="Franck Binard"/>
     
 <link href="base.css" rel="stylesheet" />
-<link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
-         rel = "stylesheet">
+<link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel = "stylesheet">
+<link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel = "stylesheet">
 
-         <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-	<title>SystemF Bricks Demo (Neuron-Fac)</title>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<title>SystemF Bricks Demo (Neuron-Fac)</title>
 </head>
 
 
@@ -40,10 +41,10 @@
 	</center>
 </td>
 
+<div class="connector" id="connector" style="left:20px; top:450px">
 <td style="vertical-align: top; text-align:center; width: 15%">
     <div id="connectorGenerated" class="connector generator">
-        connector
-    </div>
+   </div>
     <div id="see"></div>
 </td>
 </tr>
@@ -83,7 +84,8 @@
     z-index:10;
 }
 
-.active, #connector.active{
+active, #connector.active{
+
 	background-color: #FF0000;
 	border-color: #8BB; 
 }

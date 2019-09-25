@@ -2,11 +2,8 @@
 
 const app = require('../app').app
 const workspace = require('./ui/workspace').workspace
-
 const systemF = require('./systemF').systemF
-const context = require('./programs/context').context
 
-const bricks = require('./ui/bricks.js').bricks
 
 jQuery(function($) {
 
@@ -14,12 +11,14 @@ jQuery(function($) {
 
     init = function() {
         try {
+
             console.log("Application Start")
             $workspace = $( '#workspace' )
             workspace.onReady($workspace)
-            systemF.onReady(context)
+            systemFBrick.onReady(workspace)
             app.onReady(workspace, systemF, bricks)
             return true
+
         } catch (err) {
            app.errorHandler({
                 err,
