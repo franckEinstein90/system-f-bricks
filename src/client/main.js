@@ -15,8 +15,7 @@ jQuery(function($) {
             console.log("Application Start")
             $workspace = $( '#workspace' )
             workspace.onReady($workspace)
-            systemFBrick.onReady(workspace)
-            app.onReady(workspace, systemF, bricks)
+            app.onReady(workspace, systemF)
             return true
 
         } catch (err) {
@@ -30,8 +29,9 @@ jQuery(function($) {
 
     if (init()) {
         try {
-            app.onRun()
+            setInterval( app.onRun, 500)
         }
+
         catch(err){
             app.errorHandler({
                 err, 

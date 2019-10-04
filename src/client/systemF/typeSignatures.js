@@ -3,16 +3,17 @@
 const expect = require('chai').expect
 const equal = require('deep-equal')
 
-//const context = require('./typeContext').typeContext 
-
 
 const typeSignatures = (function(){
+
     let signature, isSameSignature;
 
     signature = function(context, typeDescription){
         return typeSignatures.signature(context, typeDescription)
     },
+
     isSameSignature = (sLeft, sRight) => typeSignatures.compare(sLeft, sRight) === typeSignatures.relation.same
+
     return{
 
         errors: {
@@ -45,14 +46,16 @@ const typeSignatures = (function(){
         
         TypeSignature: function(context, typeDescription){
 
-            if ( typeof typeDescription === 'function'){
+            this.context = context
 
+            if ( typeof typeDescription === 'function'){
                 this.category = typeSignatures.categories.Abstract 
                 this.description = typeDescription
                 return
             }
 
             if ( Array.isArray(typeDescription) && typeDescription.length === 1 ) {
+
                 expect(Array.isArray(typeDescription[0])).to.eql(false)
                 this.category = typeSignatures.categories.Atomic
                 this.description = context.name(typeDescription[0])
@@ -60,6 +63,7 @@ const typeSignatures = (function(){
             }
             
             if ( Array.isArray(typeDescription) && typeDescription.length > 1 ) { //ArrowType
+
                 this.category =   typeSignatures.categories.Arrow
                 this.left     =   signature(context, [typeDescription[0]])
                 this.right    =   signature(context, typeDescription.slice(1))
@@ -90,12 +94,17 @@ const typeSignatures = (function(){
             return typeSignatures.relation.different
         },
 
-        combine: function(tsLeft, tsRight){
-            if ( tsLeft.isAbstractType ){
-                return signature(tsLeft.description(tsRight.description))
+        deduce: function({leftNode, rightNode}){ 
+            //takes 2 typeSignatures and returns 
+            //the result of the deduction
+            //
+            //deduce(X:W, A) = V[A/X]
+            if ( leftNode.isAbstractType ){
+                return //signature(leftNode.description(tsRight.description))
             }
-            if ( tsLeft.isArrowType && isSameSignature(tsLeft.left, tsRight) ){
-                return tsLeft.right
+            //deduce(A -> B, A) = B
+            if ( leftNode.isArrowType && isSameSignature(leftNode.left, rightNode) ){
+                return leftNode.right
             }
         }
     }
@@ -103,9 +112,24 @@ const typeSignatures = (function(){
 
 
 typeSignatures.TypeSignature.prototype = {
+
     get key(){
         return this.toString()
     },
+
+
+    mod: function({atomicCallback, abstractCallback, arrowCallback}){
+    //applies a callback function to this object
+    //depending on the type of object it is
+         switch(this.category){
+            case typeSignatures.categories.Atomic:
+                  return atomicCallback.bind(this)()
+            case typeSignatures.categories.Arrow:
+                  return arrowCallback.bind(this)()
+            case typeSignatures.categories.Abstract:
+                  return abstractCallback.bind(this)()
+          } 
+    }, 
 
     toString: function(){
         let signatureDescription

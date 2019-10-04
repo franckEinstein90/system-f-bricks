@@ -1,5 +1,7 @@
 'use strict';
 
+const brickViews = require('./brickViews').brickViews
+
 const brickStatusCodes = (function(){
     return{
         //status codes for objects in workspace
@@ -10,59 +12,75 @@ const brickStatusCodes = (function(){
         newObject:      0b0010000, 
         destroyed:      0b1000000
     }
-})()
+})();
+
+
+const Brick = class{
+        constructor ({htmlID, type, state, label, backgroundColor}){
+            this.type = type
+            this.htmlID = htmlID 
+            this.state = state || 0
+            this.label = label
+            this.backgroundColor = backgroundColor
+            this.cssClasses = ["brick"]
+        }
+};
 
 const bricks = (function(){
     let $workspace, cssClasses
 
     cssClasses = {
         type:"typeBrick", 
-        connector: "brick typeBrick",
-        pug: "brick pugBrick", 
-        group: "brick groupBrick"
+        connector: "typeBrick",
+        pug: "pugBrick", 
+        group: "groupBrick"
     }
-    return{
+    return {
+        
         setWorkspace(wks){
             $workspace = wks
         }, 
 
-        Brick: function({htmlID, state, label, backgroundColor}){
-            this.htmlID = htmlID 
-            this.state = state || 0
-            this.label = label
-            this.backgroundColor = backgroundColor
-            this.cssClasses = ["brick"]
-        },
+        TypeBrick: class extends Brick { 
+            constructor( {type, htmlIdIndex} ){
+                super(
+                    {
+                        htmlID: type.alias + "-" + htmlIdIndex, 
+                        type: type, 
+                        state: 0, 
+                        label: type.alias, 
+                        backgroundColor: type.color
+                    })
 
-        TypeBrick: function(ty, idSuffix) {
-
-            let brick = new bricks.Brick({
-                htmlID: ty.alias + idSuffix, 
-                state: 0, 
-                label: ty.alias, 
-                backgroundColor: ty.color})
-
-            brick.cssClasses.push(cssClasses.type)
-            return brick; 
+                this.cssClasses.push(cssClasses.type)
+            }
         }, 
 
-        ConnectorBrick: function(htmlID, brickState){
+        PugBrick: class extends Brick {
+            constructor(ty, pug, idSuffix){
+                super({
+                    htmlID: ty.alias + "-" + pug.name + idSuffix, 
+                    state: 0, 
+                    label: pug.label, 
+                    backgroundColor: ty.color})
+
+                this.cssClasses.push(cssClasses.pug)
+            }
+        }, 
+
+        ConnectorBrick: class extends Brick {
+            constructor(htmlID, brickState){
+
+            }
+        }, 
+
+        GroupBrick: class extends Brick{
 
         }, 
 
-        PugBrick: function(ty, pug, idSuffix){
-            let brick = new bricks.Brick({
-                htmlID: ty.alias + "_" + pug.name + idSuffix, 
-                state: 0, 
-                label: pug.label, 
-                backgroundColor: ty.color})
+        ProgramBrick: class extends Brick{
 
         }, 
-
-        GroupBrick: function(htmlID, brickState){
-
-        }, 
-
        
         not: function(state){
             return 23;
@@ -70,7 +88,7 @@ const bricks = (function(){
     }
 })()
 
-bricks.Brick.prototype.getRelativePosition = function(){
+Brick.prototype.getRelativePosition = function(){
     let position = this.jqHandle.position()
     this.pos = {
         left: position.left, 
@@ -80,19 +98,34 @@ bricks.Brick.prototype.getRelativePosition = function(){
     }
 }
 
-bricks.Brick.prototype.html = function(){
-    return [`<div width='150' height='50'  `, 
-            `class="${this.cssClasses.join(' ')}" `, 
-            ` style='background-color:${this.backgroundColor}'>`, 
-            this.label, 
-            `</div>`].join('')
+Brick.prototype.html = function(){
+
+    if(this instanceof bricks.TypeBrick){
+        return brickViews.typeBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.PugBrick){
+        return brickViews.pugBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.GroupBrick){
+        return brickViews.groupBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.ConnectorBrick){
+        return brickViews.connectorBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.ProgramBrick){
+        return brickViews.programBrickHTML.bind(this)()
+    }
+
+    throw "Unable to figure out what kind of brick this is";
 }
 
-bricks.Brick.prototype.not = function( status ){
+Brick.prototype.not = function( status ){
     this.status -= status
 }
 
-
+Brick.prototype.inWorkspace = function(){
+    return this.state & brickStatusCodes.inWorkspace
+}
 module.exports = {
     brickStatusCodes, 
     bricks

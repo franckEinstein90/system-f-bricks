@@ -4,7 +4,6 @@ const uuidv4 = require('uuid/v4')
 const pugs = require('./pugs.js').pugs
 
 const types = (function(){
-    let that = this
 
     return{
 
@@ -15,7 +14,6 @@ const types = (function(){
             this.alias = alias || typeSignature.toString();
             this.uuid = uuidv4();
         }
-
     }
 })();
 

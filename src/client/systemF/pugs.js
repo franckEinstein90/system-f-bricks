@@ -1,13 +1,15 @@
 "use strict";
 
 const app = require('../../app').app
+const ts = require('./typeSignatures').typeSignatures
 
 const pugs = (function(){
    
    
     return{
 
-        Pug: function({name, label, typeID}){
+        Pug: function({name, label, typeUuid}){
+
             if(name === undefined){
                 throw pugs.errors.invalidName
             }
@@ -15,7 +17,7 @@ const pugs = (function(){
                 throw pugs.errors.invalidName
             }
             this.name = name
-            this.typeID = typeID || null
+            this.typeUuid = typeUuid || null
             this.label = label || name
         }, 
 

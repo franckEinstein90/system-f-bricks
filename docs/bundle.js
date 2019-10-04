@@ -11657,36 +11657,25 @@ const app = (function(){
             pos: {left:20, top:250}}, 
 
        {    htmlID:"NUM-NUM-NUM", 
-            color: 'blue',
+            color: 'beige',
             pugs: [ pug('minus', '-'), 
                     pug('mult', '*'), 
                     pug('plus', '+'), 
                     pug('div', '/') ],
             signatureDescription: ["NUM", ["NUM", "NUM"]], 
             pos: {left:20, top:350}}
-    ],
+    ]
 
     renderTypesPanel = function(){
-        $typesPanel = $( '#typesPanel' )
+        $typesPanel = $( '#typesPanelLeft' )
         let offset = 10 
         systemF.types.forEach(ty =>{
-            let typeBricks, pugBricks; 
-            typeBricks = workspace.makeTypeBrickGenerator(ty)
-            $typesPanel.append(
-                    [`<DIV id="${ty.alias}" class="brickGenerator" `, 
-                        `style='top:${offset.toString()}px;'>`,
-                       typeBricks, 
-                       `<table style='top:${(offset+50).toString()}px'>${pugBricks}</table>`,
-                      "</DIV>"].join('')
-            )
-            $(ty.alias).children().css('left', "10px")
-            $(ty.alias).children().css('top', offset.toString() + "px")
-            $('.brick').draggable();
-            offset += 150 
+            workspace.makeTypeBrickGenerator(ty)
+           /* pugBricks = workspace.makePugBricksGenerator(ty)*/
         })
     }
 
-   populateSystemF = function(){
+    populateSystemF = function(){
         types.forEach( ty =>{ 
             systemF.addType(ty.signatureDescription, ty.htmlID, ty.color);
             systemF.addPugs(ty.signatureDescription, ty.pugs);
@@ -11717,6 +11706,9 @@ const app = (function(){
         } ,
 
         onRun: function(){
+            console.log("echo"); 
+            let bricksInWorkspace = workspace.bricks.filter(brick => brick.inWorkspace())
+            bricksInWorkspace.forEach(brick => console.log(brick.htmlID))
          /*   if(!window.Worker){
                 alert("this is not going to work")
             }
@@ -11800,11 +11792,8 @@ module.exports = {
 
 const app = require('../app').app
 const workspace = require('./ui/workspace').workspace
-
 const systemF = require('./systemF').systemF
-const context = require('./programs/context').context
 
-const bricks = require('./ui/bricks.js').bricks
 
 jQuery(function($) {
 
@@ -11812,12 +11801,13 @@ jQuery(function($) {
 
     init = function() {
         try {
+
             console.log("Application Start")
             $workspace = $( '#workspace' )
             workspace.onReady($workspace)
-            systemF.onReady(context)
-            app.onReady(workspace, systemF, bricks)
+            app.onReady(workspace, systemF)
             return true
+
         } catch (err) {
            app.errorHandler({
                 err,
@@ -11829,8 +11819,9 @@ jQuery(function($) {
 
     if (init()) {
         try {
-            app.onRun()
+            setInterval( app.onRun, 500)
         }
+
         catch(err){
             app.errorHandler({
                 err, 
@@ -11840,7 +11831,8 @@ jQuery(function($) {
     }
     
 })
-},{"../app":58,"./programs/context":60,"./systemF":61,"./ui/bricks.js":65,"./ui/workspace":66}],60:[function(require,module,exports){
+
+},{"../app":58,"./systemF":61,"./ui/workspace":67}],60:[function(require,module,exports){
 "use strict";
 
 const app = require('../../app').app
@@ -11923,6 +11915,7 @@ const systemF = (function(){
                     }
                 }
         },
+
         typeIterator: function(){
             return systemTypes.values()
         },
@@ -11979,17 +11972,20 @@ const systemF = (function(){
 module.exports = {
     systemF
 }
+
 },{"../app.js":58,"./programs/context":60,"./systemF/typeSignatures":63,"./systemF/types":64}],62:[function(require,module,exports){
 "use strict";
 
 const app = require('../../app').app
+const ts = require('./typeSignatures').typeSignatures
 
 const pugs = (function(){
    
    
     return{
 
-        Pug: function({name, label, typeID}){
+        Pug: function({name, label, typeUuid}){
+
             if(name === undefined){
                 throw pugs.errors.invalidName
             }
@@ -11997,7 +11993,7 @@ const pugs = (function(){
                 throw pugs.errors.invalidName
             }
             this.name = name
-            this.typeID = typeID || null
+            this.typeUuid = typeUuid || null
             this.label = label || name
         }, 
 
@@ -12010,22 +12006,24 @@ const pugs = (function(){
 module.exports = {
     pugs
 }
-},{"../../app":58}],63:[function(require,module,exports){
+
+},{"../../app":58,"./typeSignatures":63}],63:[function(require,module,exports){
 "use strict";
 
 const expect = require('chai').expect
 const equal = require('deep-equal')
 
-//const context = require('./typeContext').typeContext 
-
 
 const typeSignatures = (function(){
+
     let signature, isSameSignature;
 
     signature = function(context, typeDescription){
         return typeSignatures.signature(context, typeDescription)
     },
+
     isSameSignature = (sLeft, sRight) => typeSignatures.compare(sLeft, sRight) === typeSignatures.relation.same
+
     return{
 
         errors: {
@@ -12058,14 +12056,16 @@ const typeSignatures = (function(){
         
         TypeSignature: function(context, typeDescription){
 
-            if ( typeof typeDescription === 'function'){
+            this.context = context
 
+            if ( typeof typeDescription === 'function'){
                 this.category = typeSignatures.categories.Abstract 
                 this.description = typeDescription
                 return
             }
 
             if ( Array.isArray(typeDescription) && typeDescription.length === 1 ) {
+
                 expect(Array.isArray(typeDescription[0])).to.eql(false)
                 this.category = typeSignatures.categories.Atomic
                 this.description = context.name(typeDescription[0])
@@ -12073,6 +12073,7 @@ const typeSignatures = (function(){
             }
             
             if ( Array.isArray(typeDescription) && typeDescription.length > 1 ) { //ArrowType
+
                 this.category =   typeSignatures.categories.Arrow
                 this.left     =   signature(context, [typeDescription[0]])
                 this.right    =   signature(context, typeDescription.slice(1))
@@ -12103,12 +12104,17 @@ const typeSignatures = (function(){
             return typeSignatures.relation.different
         },
 
-        combine: function(tsLeft, tsRight){
-            if ( tsLeft.isAbstractType ){
-                return signature(tsLeft.description(tsRight.description))
+        deduce: function({leftNode, rightNode}){ 
+            //takes 2 typeSignatures and returns 
+            //the result of the deduction
+            //
+            //deduce(X:W, A) = V[A/X]
+            if ( leftNode.isAbstractType ){
+                return //signature(leftNode.description(tsRight.description))
             }
-            if ( tsLeft.isArrowType && isSameSignature(tsLeft.left, tsRight) ){
-                return tsLeft.right
+            //deduce(A -> B, A) = B
+            if ( leftNode.isArrowType && isSameSignature(leftNode.left, rightNode) ){
+                return leftNode.right
             }
         }
     }
@@ -12116,9 +12122,24 @@ const typeSignatures = (function(){
 
 
 typeSignatures.TypeSignature.prototype = {
+
     get key(){
         return this.toString()
     },
+
+
+    mod: function({atomicCallback, abstractCallback, arrowCallback}){
+    //applies a callback function to this object
+    //depending on the type of object it is
+         switch(this.category){
+            case typeSignatures.categories.Atomic:
+                  return atomicCallback.bind(this)()
+            case typeSignatures.categories.Arrow:
+                  return arrowCallback.bind(this)()
+            case typeSignatures.categories.Abstract:
+                  return abstractCallback.bind(this)()
+          } 
+    }, 
 
     toString: function(){
         let signatureDescription
@@ -12146,6 +12167,7 @@ typeSignatures.TypeSignature.prototype = {
 module.exports = {
     typeSignatures
 }
+
 },{"chai":2,"deep-equal":36}],64:[function(require,module,exports){
 "use strict"; 
 
@@ -12153,7 +12175,6 @@ const uuidv4 = require('uuid/v4')
 const pugs = require('./pugs.js').pugs
 
 const types = (function(){
-    let that = this
 
     return{
 
@@ -12164,7 +12185,6 @@ const types = (function(){
             this.alias = alias || typeSignature.toString();
             this.uuid = uuidv4();
         }
-
     }
 })();
 
@@ -12177,8 +12197,58 @@ types.Type.prototype.toString = function(options){
 module.exports = {
     types
 }
+
 },{"./pugs.js":62,"uuid/v4":57}],65:[function(require,module,exports){
+
+
+const brickViews = (function(){
+
+  return {
+    
+    typesignatureBrickHTML: function(){
+
+    }, 
+
+    typeBrickHTML: function(){
+      return [`<div  ID='${this.htmlID}' `, 
+      `class="${this.cssClasses.join(' ')}" `, 
+      ` style='z-index:10; background-color:${this.backgroundColor}'>`, 
+      this.label , 
+      `</div>`].join('')
+    }, 
+
+    pugBrickHTML: function(){
+      return [`<div  ID='${this.htmlID}' `, 
+      `class="${this.cssClasses.join(' ')}" `, 
+      `style='position:absolute;'>`, 
+      this.label , 
+      `</div>`].join('')
+
+    }, 
+
+    connectorBrickHTML: function(){
+
+    }, 
+
+    groupBrickHTL: function(){
+
+    },
+
+    programBrickHTML: function(){
+
+    } 
+
+  }
+})()
+
+module.exports = {
+    brickViews
+}
+
+},{}],66:[function(require,module,exports){
 'use strict';
+
+const brickViews = require('./brickViews').brickViews
 
 const brickStatusCodes = (function(){
     return{
@@ -12190,59 +12260,75 @@ const brickStatusCodes = (function(){
         newObject:      0b0010000, 
         destroyed:      0b1000000
     }
-})()
+})();
+
+
+const Brick = class{
+        constructor ({htmlID, type, state, label, backgroundColor}){
+            this.type = type
+            this.htmlID = htmlID 
+            this.state = state || 0
+            this.label = label
+            this.backgroundColor = backgroundColor
+            this.cssClasses = ["brick"]
+        }
+};
 
 const bricks = (function(){
     let $workspace, cssClasses
 
     cssClasses = {
         type:"typeBrick", 
-        connector: "brick typeBrick",
-        pug: "brick pugBrick", 
-        group: "brick groupBrick"
+        connector: "typeBrick",
+        pug: "pugBrick", 
+        group: "groupBrick"
     }
-    return{
+    return {
+        
         setWorkspace(wks){
             $workspace = wks
         }, 
 
-        Brick: function({htmlID, state, label, backgroundColor}){
-            this.htmlID = htmlID 
-            this.state = state || 0
-            this.label = label
-            this.backgroundColor = backgroundColor
-            this.cssClasses = ["brick"]
-        },
+        TypeBrick: class extends Brick { 
+            constructor( {type, htmlIdIndex} ){
+                super(
+                    {
+                        htmlID: type.alias + "-" + htmlIdIndex, 
+                        type: type, 
+                        state: 0, 
+                        label: type.alias, 
+                        backgroundColor: type.color
+                    })
 
-        TypeBrick: function(ty, idSuffix) {
-
-            let brick = new bricks.Brick({
-                htmlID: ty.alias + idSuffix, 
-                state: 0, 
-                label: ty.alias, 
-                backgroundColor: ty.color})
-
-            brick.cssClasses.push(cssClasses.type)
-            return brick; 
+                this.cssClasses.push(cssClasses.type)
+            }
         }, 
 
-        ConnectorBrick: function(htmlID, brickState){
+        PugBrick: class extends Brick {
+            constructor(ty, pug, idSuffix){
+                super({
+                    htmlID: ty.alias + "-" + pug.name + idSuffix, 
+                    state: 0, 
+                    label: pug.label, 
+                    backgroundColor: ty.color})
+
+                this.cssClasses.push(cssClasses.pug)
+            }
+        }, 
+
+        ConnectorBrick: class extends Brick {
+            constructor(htmlID, brickState){
+
+            }
+        }, 
+
+        GroupBrick: class extends Brick{
 
         }, 
 
-        PugBrick: function(ty, pug, idSuffix){
-            let brick = new bricks.Brick({
-                htmlID: ty.alias + "_" + pug.name + idSuffix, 
-                state: 0, 
-                label: pug.label, 
-                backgroundColor: ty.color})
+        ProgramBrick: class extends Brick{
 
         }, 
-
-        GroupBrick: function(htmlID, brickState){
-
-        }, 
-
        
         not: function(state){
             return 23;
@@ -12250,7 +12336,7 @@ const bricks = (function(){
     }
 })()
 
-bricks.Brick.prototype.getRelativePosition = function(){
+Brick.prototype.getRelativePosition = function(){
     let position = this.jqHandle.position()
     this.pos = {
         left: position.left, 
@@ -12260,147 +12346,235 @@ bricks.Brick.prototype.getRelativePosition = function(){
     }
 }
 
-bricks.Brick.prototype.html = function(){
-    return [`<div width='150' height='50'  `, 
-            `class="${this.cssClasses.join(' ')}" `, 
-            ` style='background-color:${this.backgroundColor}'>`, 
-            this.label, 
-            `</div>`].join('')
+Brick.prototype.html = function(){
+
+    if(this instanceof bricks.TypeBrick){
+        return brickViews.typeBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.PugBrick){
+        return brickViews.pugBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.GroupBrick){
+        return brickViews.groupBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.ConnectorBrick){
+        return brickViews.connectorBrickHTML.bind(this)()
+    }
+    if(this instanceof bricks.ProgramBrick){
+        return brickViews.programBrickHTML.bind(this)()
+    }
+
+    throw "Unable to figure out what kind of brick this is";
 }
 
-bricks.Brick.prototype.not = function( status ){
+Brick.prototype.not = function( status ){
     this.status -= status
 }
 
-
+Brick.prototype.inWorkspace = function(){
+    return this.state & brickStatusCodes.inWorkspace
+}
 module.exports = {
     brickStatusCodes, 
     bricks
 }
 
-},{}],66:[function(require,module,exports){
+},{"./brickViews":65}],67:[function(require,module,exports){
 "use strict";
 
 const app = require('../../app').app
 const brickStatusCodes = require('./bricks').brickStatusCodes
 const bricks = require('./bricks').bricks
 
-const managedBricks = (function(){
+const managedBricks = (function() {
     let _managedBricks = new Map()
-    return{
-        manageBrick: function(brick){
+
+    return {
+        manageBrick: function(brick) {
             _managedBricks.set(brick.htmlID, brick)
-        }, 
-        filter: function(predFunc){
-            let brickIterator, 
+        },
+        includes: function({
+            htmlID
+        }) {
+            return _managedBricks.has(htmlID)
+        },
+        get: function({
+            htmlID
+        }) {
+            return _managedBricks.get(htmlID)
+        },
+
+        filter: function(predFunc) {
+            let brickIterator,
                 resultArray,
                 brPtr
 
             brickIterator = _managedBricks.values()
             resultArray = []
             brPtr = brickIterator.next()
-            while (!brPtr.done){
-                if(predFunc(brPtr.value)){
+            while (!brPtr.done) {
+                if (predFunc(brPtr.value)) {
                     resultArray.push(brPtr.value)
                 }
-                brPtr = brickIterator.next() 
+                brPtr = brickIterator.next()
             }
             return resultArray
-        }, 
+        }
     }
 })()
 
-const workspace = (function(){
+const workspace = (function() {
 
-    let $workspace,  
-        brickStatus, 
-        initEventListeners, 
-        pugPanel, 
+    let $workspace,
+        brickStatus,
+        initEventListeners, onReceiveObject, onHover, onObjectExit, 
+        pugPanel,
         typeBrickGenerator, connectorBrickGenerator, pugBrickGenerator
 
 
+    onHover = function(event, ui) {
+        let $hoverObject = ui.draggable
+        let htmlID = ui.draggable.attr('id')
+        if(managedBricks.includes({htmlID})){
+            let brick = managedBricks.get({htmlID})
+            if(!brick.inWorkspace()){
 
-    initEventListeners = function(){
+            }
+        }
+    }, 
+                
+    onObjectExit = function(event, ui){
+        let htmlID = ui.draggable.attr('id')
+        let brick = managedBricks.get({ htmlID })
+        brick -= brickStatusCodes.inWorkspace
+        
+    }, 
+        
+    onReceiveObject = function(event, ui) {
+        let $droppedObject = ui.draggable
+        let htmlID = ui.draggable.attr('id')
+        let statusMsg
+        if (htmlID === undefined) {
+            statusMsg = "dropped unknown object"
+        } else {
+            statusMsg = "dropped " + htmlID
+            if (managedBricks.includes({
+                    htmlID
+                })) {
+                statusMsg += " which is managed"
+                let brick = managedBricks.get({
+                    htmlID
+                })
+                if (!brick.inWorkspace()) { //add brick to workspace
+                    brick.state += brickStatusCodes.inWorkspace
+                    workspace.makeTypeBrickGenerator(brick.type)
+                    $droppedObject.detach()
+                    $workspace.append($droppedObject)
+                }
+            }
+        }
+        $('#status').text(statusMsg);
+    }
+
+    initEventListeners = function() {
 
         $workspace.droppable({
 
-                drop: function(event, ui){
-                    $( this ).removeClass( 'active' )
-                },
+            drop: function(event, ui) {
+                $(this).removeClass('active')
+                onReceiveObject(event, ui)
+            },
 
-                out: function(event, ui){
-                   $( this ).removeClass( 'active')
-                },
+            out: function(event, ui) {
+                $(this).removeClass('active')
+                onObjectExit(event, ui)
+            },
 
-                over: function(event, ui){
-                   $( this ).addClass('active')
-                }
+            over: function(event, ui) {
+                $(this).addClass('active')
+            }
         })
     }
 
-    pugPanel = function(pug){
-        let pugBricks = [1,2,3,4,5,6,7]
-        .map( count => pugBrick(pug, count))
-        .join('')
+    pugPanel = function(pug) {
+        let pugBricks = [1, 2, 3, 4, 5, 6, 7]
+            .map(count => pugBrick(pug, count))
+            .join('')
 
-    return [   `<div id='${pug.name}' class="pugs">`, 
-                pugBricks
-                `</div>`].join('')
+        return [`<div id='${pug.name}' class="pugs">`,
+            pugBricks `</div>`
+        ].join('')
     }
-   
-  
-    return{
 
-        onReady:function(workspace){
+
+    return {
+
+        onReady: function(workspace) {
             $workspace = workspace
             initEventListeners()
-       }, 
-       makePugBrickGenerator: function(type, pug){
-
-           if(this.pugIDRegistrar === undefined){
-            this.pugIDRegistrar = new app.appUtils.StringRegistrar()
-            }
-
-            if(this.pugIDRegistrar.missing(pug.name)){
-                this.pugIDRegistrar.add(pug.name, {count:1})
-            }
-            for(let i = 0; i < 10; i++){
-
-                this.pugIDRegistrar.get(pug.name).count += 1; 
-            } 
-
         },
 
-        makeTypeBrickGenerator: function(type){
-        let htmlCode = ""
+        bricks: managedBricks, 
 
-        this.brickRegister = this.brickRegister || new app.appUtils.StringRegistrar()
+        makePugBricksGenerator: function(ty) {
 
-        if(this.brickRegister.missing(type.alias)){
-            this.brickRegister.add(type.alias, {count: 1})  
-        }
-        for(let i = 0; i < 10; i++){
+            this.counter = this.counter || new app.appUtils.StringRegistrar()
+
+            let createAndManageNewPugBrick = function(pug, elementIndex) {
+                let newPugBrick = new bricks.PugBrick(ty, pug, elementIndex)
+                managedBricks.manageBrick(newPugBrick)
+                newPugBrick.state = brickStatusCodes.rendered
+                return newPugBrick.html()
+            }
+
+            let htmlCode = ""
+            ty.pugs.map(pug => {
+                if (this.counter.missing(pug.name)) {
+                    this.counter.add(pug.name, {
+                        count: 1
+                    });
+                }
+                for (let i = 0; i < 1; i++) {
+                    let idSuffix = this.counter.get(pug.name).count;
+                    this.counter.get(pug.name).count += 1;
+                    htmlCode += createAndManageNewPugBrick(pug, idSuffix);
+                }
+            })
+            return htmlCode
+        },
+
+        makeTypeBrickGenerator: function(type) {
+
+            let createAndManageNewTypeBrick = function(idIndex) {
+                let newBrick = new bricks.TypeBrick({
+                    type: type,
+                    htmlIdIndex: idIndex
+                })
+                managedBricks.manageBrick(newBrick)
+                newBrick.state = brickStatusCodes.rendered
+                return newBrick.html()
+            }
+            //counter, keeps track of the number of bricks
+            //created of each differnt types
+            this.brickRegister = this.brickRegister || new app.appUtils.StringRegistrar()
+            if (this.brickRegister.missing(type.alias)) {
+                this.brickRegister.add(type.alias, {
+                    count: 1
+                })
+            }
+
             let idIndex = this.brickRegister.get(type.alias).count
-            let newBrick = new bricks.TypeBrick(type, "_" + idIndex)
-            managedBricks.manageBrick(newBrick)
+            let $generatorContainer = $('#' + type.alias)
+            $generatorContainer.prepend(createAndManageNewTypeBrick(idIndex))
             this.brickRegister.get(type.alias).count += 1
-            htmlCode += newBrick.html()
-            newBrick.state = brickStatusCodes.rendered
-        }
-        return htmlCode
- 
-        drawBricks = managedBricks.filter( 
-            brick => brick.state === 0
-            )
-        //draw each brick
-        return drawBricks.map(brick=>brick.html()).join('')
+            $('.brick').draggable();
 
-       }
-   }
+        }
+    }
 })()
 
 module.exports = {
     workspace
 }
 
-},{"../../app":58,"./bricks":65}]},{},[59]);
+},{"../../app":58,"./bricks":66}]},{},[59]);

@@ -32,6 +32,24 @@ appUtils.StringRegistrar.prototype = {
     }
 }
 
+
+const report = (function(){
+
+  let messages=[]
+
+  return{
+    addMsg: function(msg){
+      messages.push(msg)
+    }, 
+    clear: function(){
+      messages.length = 0
+    }, 
+    display: function(){
+        $('#status').text(statusMsg);
+    }
+  }
+})()
+
 const app = (function(){
     let workspace, systemF, bricks, 
         workspaceBricks, 
@@ -39,22 +57,11 @@ const app = (function(){
         types, 
         //helpers
         pug, $typesPanel, renderTypesPanel, 
-        populateSystemF, 
-        report
+        populateSystemF
        
     /*******   helper function ************************/
     pug = (n,l) => ({name:n, label:l})
-
-    workspaceBricks = new Map() 
-
-    report = function(){
-        let strOut = ""
-        workspaceBricks.forEach(
-            (_, htmlID) => strOut += `<h2>${htmlID}</h2>`)
-        $('#see').empty()
-        $('#see').append(strOut)
-    }
-
+    
     types = [
         {   htmlID:"NUM",
             color: 'yellow' ,
@@ -72,36 +79,24 @@ const app = (function(){
             pos: {left:20, top:250}}, 
 
        {    htmlID:"NUM-NUM-NUM", 
-            color: 'blue',
+            color: 'beige',
             pugs: [ pug('minus', '-'), 
                     pug('mult', '*'), 
                     pug('plus', '+'), 
                     pug('div', '/') ],
             signatureDescription: ["NUM", ["NUM", "NUM"]], 
             pos: {left:20, top:350}}
-    ],
+    ]
 
     renderTypesPanel = function(){
-        $typesPanel = $( '#typesPanel' )
-        let offset = 10 
-        systemF.types.forEach(ty =>{
-            let typeBricks, pugBricks; 
-            typeBricks = workspace.makeTypeBrickGenerator(ty)
-            $typesPanel.append(
-                    [`<DIV id="${ty.alias}" class="brickGenerator" `, 
-                        `style='top:${offset.toString()}px;'>`,
-                       typeBricks, 
-                       `<table style='top:${(offset+50).toString()}px'>${pugBricks}</table>`,
-                      "</DIV>"].join('')
-            )
-            $(ty.alias).children().css('left', "10px")
-            $(ty.alias).children().css('top', offset.toString() + "px")
-            $('.brick').draggable();
-            offset += 150 
+        systemF.types.forEach(
+            ty =>{ 
+              workspace.makeTypeBrickGenerator(ty)
+              workspace.makePugBricksGenerator(ty)
         })
     }
 
-   populateSystemF = function(){
+    populateSystemF = function(){
         types.forEach( ty =>{ 
             systemF.addType(ty.signatureDescription, ty.htmlID, ty.color);
             systemF.addPugs(ty.signatureDescription, ty.pugs);
@@ -109,10 +104,13 @@ const app = (function(){
     }
 
     return{
+
         appUtils: appUtils, 
+
         errorHandler: function({err, stage, message}) {
             console.log(err)
         },
+
         appStages: {
             init: x => "init:" + x, 
             running: 20
@@ -132,76 +130,13 @@ const app = (function(){
         } ,
 
         onRun: function(){
-         /*   if(!window.Worker){
-                alert("this is not going to work")
-            }
-            
-             
-            $garbage = $("#garbage")
-        
-        
-        
-        
-            $('.left-node').droppable({
-        
-            })
-        
-            $('.drag').draggable({
-                start: function( ev, dd ){
-                    systemFBrick.addNewTSElements()
-                    $( this ).addClass('active')
-                },
-                drag: function( ev, dd ){
-                   $('#status').text( $(this).attr('id'))
-                },
-                stop:  function(){
-                    if(workspace.contains($( this ))){
-                        $('#status').text("in")
-                    }
-                    else {
-                        $('#status').text('out')
-                    }
-                    $( this ).removeClass('active')
-                    if( $( this ).offset().top > $garbage.offset().top){
-                        alert('kill')
-                    }
-                }
-            })
-        */ 
-        },
-
-        updateBricks: function(BrickID, currentState){
-
-            let newStatus
-        
-            if(workspaceBricks.has(BrickID)) {
-                let brick = workspaceBricks.get(BrickID)
-                brick.getRelativePosition()
-            //    newStatus = from( oldStatus, currentStatus  )
-            }
-            else {
-                //create a new brick and add to //workspace
-                let newBrick = new bricks.Brick(BrickID, 
-                                                currentState, 
-                                                workspace)
-        
-                workspaceBricks.set(BrickID, newBrick) 
-        
-            }
-            report()
-        }, 
-
-        addNewTSElements: function(){
-            types.forEach( ts => makeNewElement(ts) ) 
-        } ,
-
-        addNewTSElement: function(idx){
-            let ts = types[idx]
-            makeNewElement(ts)
-        } ,
-
-        postMessage: function(msg){
-           console.log('|') 
+            if(workspace.dirtyBit === false) return; //nothing changed
+            let bricksInWorkspace = workspace.bricks.filter(
+                      function(brick){ 
+                        return brick.inWorkspace()
+                      })
+            bricksInWorkspace.forEach(brick => console.log(brick.htmlID))
+            workspace.dirtyBit = false 
         }
     }
 })()

@@ -57,43 +57,47 @@ ul li {
 	}
 
 
-#typesPanel{
-
-	position: absolute; 
+.typesPanel{
 	background-color: #AAA;
-	left: 10px; 
-	top: 160px; 
-	width: 200px;
-	height: 600px;  
+	width: 230px;
+	padding-top: 30px;
+	margin-top: 30px;  
+	padding-bottom: 30px;
+	padding-bottom: 30px; 
+	padding-left:20px; 
+	text-align:center;  
 }
 
 .brickGenerator{
-	position:absolute; 
 	background-color: olive;
-	height:140px;
 	width: 190px;
+	height:230px; 
 	border-right: orange;
 	border-right-width: 2px; 
 	border-right-style: ridge;
 	border-bottom: #888; 
 	border-bottom-width: 2px; 
 	border-bottom-style: outset;
+	margin-bottom:20px; 
+	padding-top: 20px;
+	padding-left:20px;  
 }
-.pug{
-	background-color:red;
-	color:white;
+
+
+.typeSignatureElement{
+	width:10px;
+	height:10px;
+	border: 1px black inset;
+	box-shadow: 3px 1px;
+		
 }
 
 .brick{
-	padding-bottom:  2px;
-	padding-right: 10px;
-	padding-left:10px; 
-	padding-top:  10px;
-	margin-top: 5px;  
-	margin-bottom: 2px;  
+	position:absolute; 
 	border: 3px;
 	border-style: dashed;
 
+	padding-top: 10px; 
 	width:100px;
 	height: 30px;
 
@@ -103,28 +107,103 @@ ul li {
 	font-size: 10pt;
 	cursor: grab; 
 }
-
+.inWorkspace{
+	position:absolute; 
+}
 .typeBrick{
-	width: 140px; 
-	position: absolute;
-	
+	width: 140px;
+}
+
+.brick.typeBrick.active{
+	border-color:red;
 }
 #garbage{
 	width:100%;
-    height:10%;
+    height:5%;
     background-color:#F11111;
-	border: 1px dashed #888;
     text-align:100%;
-    color:white;
+	color:white;
+	border-bottom: #137 3px inset;
+	box-shadow: #BCE 3px 3px; 
 }
 
+.pugBrickHolder{
+	width:80%;
+	height:200px; 
+	padding-top:10px;
+	padding-bottom:10px; 
+	padding-left: 5px; 
+	padding-right: 5px;  
+	margin-top:20px; 
+	margin-bottom: 20px; 
+	border: 1px solid black; 
+	box-shadow: 3px 3px;  
+}
 
-
-.connector{
-		border: 16px solid #f3f3f3;
+.pugBrick{
 		border-radius: 50%;
-		border: 16px solid #3498db;
+		border: 12px solid #3498db;
+		width: 40px;
+		height: 40px;
+		background-color:white; 
+		text-align: center;
+		box-shadow: 3px 3px;
+		font-size:18pt; 
+	  }
+
+.brick.pugBrick.active{
+	background-color: aqua;
+	box-shadow: 3px 3px; 
+}
+
+.typedPug{
+
+}
+
+.connectorBrick{
+		border: 14px solid mediumseagreen;
+		border-radius: 50%;
 		width: 50px;
 		height: 50px;
 	  }
+.brick.connectorBrick.active{
+	background-color: #137;
+}
 
+.group{
+	border-width:3px;
+	border-style:solid;
+	border-color:red;
+}
+.group>TR>TD{
+	text-align: center
+}
+#status {
+	height:50px;
+	background-color: #222; 
+	color:lime;
+}
+#workspace {
+	height:800px;
+	width:700px;
+	border: 1px dashed #888;
+	margin-top:30px;
+	background-color: #BCE;
+}
+#workspace.active{
+	background-color: #F11111;
+}
+#frontCanvas{
+    height:90%
+}
+
+.drag {
+	position: absolute;
+	border: 1px solid #89B;
+	background: #BCE;
+    text-align:center;
+	height: 58px;
+	width: 158px;
+	cursor: move;
+    z-index:10;
+}

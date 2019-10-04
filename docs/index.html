@@ -10,8 +10,6 @@
     <meta name="author" content="Franck Binard"/>
     
 <link href="base.css" rel="stylesheet" />
-<link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel = "stylesheet">
-<link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel = "stylesheet">
 
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -22,75 +20,174 @@
 
 
 <body>
+<table>
+   
+<tr><td style="vertical-align: top">
 
-	<h2>Neuron-Fac bricks demo</h2>
-    <h3>Franck Binard</h3>
+<div id="typesPanelLeft" class="typesPanel"> 
+<DIV class="brickGenerator" id="NUM-NUM-NUM">
 
-
-    <div id="typesPanel" style="text-align:center">
-
+                    <table class="pugBrickHolder">
+                        <tr> 
+                            <td style="padding-bottom:5px">
+                            <div class="brick pugBrick">
+                                    &#43;
+                            </div>
+                            </td>
+                            <td style="padding-bottom:5px">
+                            <div class="brick pugBrick"> 
+                                    &#247;	
+                            </div>
+                            </td>
+                        </tr>
+    
+                       
+                    <tr>
+                            <td>
+                            <div class="brick pugBrick">
+                                    &#215;
+                            </div>
+                            </td>
+                            <td>
+                            <div class="brick pugBrick">
+                                &#8315;
+                            </div>
+                            </td>
+                        </tr>
+    
+                    </table>
+    
+           </DIV>
+   
+           
+   <DIV class="brickGenerator" id="NUM-NUM" style=''>
+                <table class="pugBrickHolder">
+                        <tr> 
+                            <td style="padding-bottom:5px">
+                            <div class="brick pugBrick">
+                                    &#8730;
+                            </div>
+                            </td>
+                            <td style="padding-bottom:5px">
+                            <div class="brick pugBrick"> 
+                                cos	
+                            </div>
+                            </td>
+                        </tr>
+    
+                        <tr>
+                            <td style="padding-bottom:5px">
+                            <div class="brick pugBrick">
+                                sin	
+                            </div>
+                            </td>
+                            <td style="padding-bottom:5px">
+                            <div class="brick pugBrick"> 
+                                    &#8315; 
+                            </div>
+                            </td>
+                        </tr>
+    
+                    </table>
+            </DIV>
+        
     </div>
+</div>
 
-<td width="70%">
-	<center>
-		<h2>Workspace</h2>
-		<div id="workspace">
-            <canvas id="workbench"></canvas>
-            <div id="garbage">Garbage</div>
-        </div>
-	</center>
+        <td width="70%" style="vertical-align: top">
+                <center>
+                <div>
+                    <div id="workspace">
+                    <div id="status"></div>
+                        <canvas id='frontCanvas'>
+                        </canvas>
+                    <div id="garbage">Garbage</div>
+                    </div>
+                       <!-- <canvas id="workbench"></canvas>-->
+                </div>
+                </center>
+            </td>
+<td style="vertical-align: top">
+        <div id="typesPanelRight" class="typesPanel"> 
+                <DIV class="brickGenerator" style=''>
+                        <div class="brick typeBrick" style="background-color:yellow">
+                            Num->Num->Bool
+                        </div>
+                        
+            
+                            <table class="pugBrickHolder">
+                               
+            
+                                <tr>
+                                    <td style="padding-bottom:5px">
+                                   
+                                    <div class="brick pugBrick"> 
+                                        &#60;
+                                    </div>
+                                    </td>
+                                    <td>
+                                    <div class="brick pugBrick">
+                                            &#62;
+                                    </div>
+                                    </td>
+                                    <td>
+                               </tr>
+                               <tr>
+                                   <td style="padding-bottom:5px">
+<div class="brick pugBrick">
+    =
+</div>
+
 </td>
+                            </tr>
+            
+                            </table>
+            
+                   </DIV>    
+                   
+<DIV class="brickGenerator" id="NUM"> 
 
-<div class="connector" id="connector" style="left:20px; top:450px">
-<td style="vertical-align: top; text-align:center; width: 15%">
-    <div id="connectorGenerated" class="connector generator">
-   </div>
-    <div id="see"></div>
+     
+
+<table class="pugBrickHolder">
+    <tr>
+
+        <td class="pugBrickGenerator" id="user-a" style="padding-bottom:5px">
+        <div class="brick pugBrick"> 
+            &Alpha;
+        </div>
+       </td>
+
+                                    <td>
+                                    <div class="brick pugBrick">
+                                            &Beta;
+                                    </div>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    <div class="brick pugBrick">
+                                            &pi;
+                                    </div>
+
+                                    </td>
+                                    <td>
+                                    <div class="brick pugBrick">
+                                        1
+                                    </div>
+
+                                    </td>
+                               </tr>
+            
+                            </table>
+            
+                   </DIV>
+            </div>
+            
 </td>
 </tr>
 </table>
 
-<style type="text/css">
-#status {
-    height:50px; 
-    margin-top:30px;
-}
-#workspace {
-	height:700px;
-	width:700px;
-	border: 1px dashed #888;
-	margin-top:30px;
-}
-#workbench {
-    height:90%
-}
-.type{
-	position: absolute;
-	border: 1px solid #89B;
-	background: #BCE;
-    text-align:center;
-	height: 58px;
-	width: 158px;
-}
 
-.drag {
-	position: absolute;
-	border: 1px solid #89B;
-	background: #BCE;
-    text-align:center;
-	height: 58px;
-	width: 158px;
-	cursor: move;
-    z-index:10;
-}
-
-active, #connector.active{
-
-	background-color: #FF0000;
-	border-color: #8BB; 
-}
-
-</style>
 <script src="bundle.js"></script>
 </body>
 
